@@ -1,0 +1,68 @@
+# Specify the compiler
+NVCC = /usr/local/cuda/bin/nvcc
+CXX = g++
+
+# Specify the target file (the output)
+TARGET = main
+
+# Add the necessary include paths
+INCLUDES = -I /usr/local/cuda/include -I /home/stefano/Documents/Reserch/06SpringModelCUDA/Header
+
+# Add the necessary libraries
+LIBS = -L /usr/local/cuda/lib64
+
+CUDA_LIB = libcuda.a
+CPP_LIB = libcpp.a
+
+# Source directories
+SRC_DIRS = CUDA Debug InputFile Result Routines . 
+
+
+# Gather all .cpp and .cu source files from the source directories
+CU_SOURCES = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.cu))
+CPP_SOURCES = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.cpp))
+
+# Define object files
+CU_OBJS = $(CU_SOURCES:.cu=.cu.o)
+CPP_OBJS = $(CPP_SOURCES:.cpp=.o)
+
+#OBJS = $(CU_OBJS) $(CPP_OBJS)
+
+# Compiler flags
+NVCC_FLAGS = -g -G -Xcompiler -Wall -arch=sm_50
+CXX_FLAGS = -Wall -fopenmp
+
+
+# The first rule is the default rule. Make will execute it if no specific rule was requested.
+# It is conventionally called 'all'.
+all: $(TARGET)
+
+
+$(TARGET): $(CU_OBJS) $(CPP_LIB)
+	$(CXX) $(CXX_FLAGS) $(INCLUDES) $(LIBS) -o $@ -Wl,--start-group $^ -Wl,--end-group -lcudart
+
+$(CUDA_LIB): $(CU_OBJS)
+	$(NVCC) $(NVCC_FLAGS) $(INCLUDES) -o $@ -dlink $^
+
+$(CPP_LIB): $(CPP_OBJS)
+	ar rcs $@ $^
+
+# This rule says that the output depends on all object files,
+# and they should be linked together to produce the output.
+#$(TARGET): $(OBJS)
+#	$(CXX) $(CXX_FLAGS) $(INCLUDES) $(LIBS) -o $@ $^
+
+# This rule says that a .cu file can be turned into a .cu.o file by running nvcc.
+%.cu.o: %.cu
+	$(NVCC) $(NVCC_FLAGS) $(INCLUDES) -o $@ -c $<
+
+# This rule says that a .cpp file can be turned into a .cpp.o file by running g++.
+%.cpp.o: %.cpp
+	$(CXX) $(CXX_FLAGS) $(INCLUDES) -o $@ -c $<
+
+.PHONY: clean
+
+clean:
+	rm -f $(CU_OBJS) $(CPP_OBJS) $(TARGET) $(CUDA_LIB) $(CPP_LIB)
+#	rm -f $(OBJS) $(TARGET)
+

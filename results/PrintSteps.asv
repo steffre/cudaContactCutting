@@ -1,0 +1,148 @@
+clear all;
+
+baseFilename = 'file_';
+baseFilename2 = 'fileColor_';
+numIterations =5516;  % Update this if the number of files changes
+
+% Create an empty cell array to hold all the matrices
+allData = cell(1, numIterations);
+allData2 = cell(1, numIterations);
+
+for i = 1:10:numIterations
+    % Construct filename for this iteration
+    currentFilename = [baseFilename, num2str(i), '.dat'];
+    currentFilename2 = [baseFilename2, num2str(i), '.dat'];
+    
+    % Read data from the file and store it in the cell array
+    allData{i} = load(currentFilename);
+    allData2{i} = load(currentFilename2);
+    
+    fprintf('Loaded data from %s\n', currentFilename);
+end
+
+
+
+baseFilename = 'totForce.dat';
+
+%currentFilename = [baseFilename, '.dat'];
+Ftot{1} = load(baseFilename);
+
+Ftot = Ftot{1};
+
+
+% Now, you can access each matrix with allData{1}, allData{2}, etc.
+sz = 15;
+ColorPoint=ones(size(allData{1},1),3).*[0,0.2,0.2];
+figure('Color',[1 1 1]);
+set(gcf,'position',[10,50,1920,1080])
+
+subplot(2,2,1);
+
+axis equal; title(['Evolution :',int2str(0)]); xlabel('L'); ylabel('H');
+R=.2;
+L = 2;
+H=1;
+Disp=1;
+
+xlim([R L+R])
+ylim([-R H+Disp+R])
+
+subplot(2,2,3);
+
+axis equal; title(['Evolution :',int2str(0)]); xlabel('L'); ylabel('H');
+xlim([-R L+R])
+ylim([-R H+Disp+R])
+
+subplot(2,2,[3,4]);
+
+axis equal; title(['Evolution :',int2str(0)]); xlabel('L'); ylabel('H');
+xlim([-R L+R])
+ylim([-R H+Disp+R])
+
+writerObj = VideoWriter("alpha3_highEnergy06");
+open(writerObj);
+
+
+index = 1;
+for i =1:10:numIterations
+
+        p = allData{i};
+        Color=allData2{i};
+
+
+        subplot(2,2,1,'replace');
+        sz = 5+Color*5;
+        ColorPoint=ones(size(p,1),3).*[0,0.2,0.2]+Color.*[1,0,0];
+        scatter3(p(:,1),p(:,2),p(:,3),sz,ColorPoint,'filled')
+        view([80 25])
+        axis equal;
+        title('Evolution ');
+        xlim([-R L+R])
+        ylim([-R H+Disp+R])
+        
+        
+        subplot(2,2,3,'replace');
+        scatter3(p(:,1),p(:,2),p(:,3),sz,ColorPoint,'filled')
+        view([90 90])
+        axis equal;
+        xlim([-R L+R])
+        ylim([-R H+Disp+R])
+
+        hold on;
+        subplot(2,2,[2,4],'replace');
+
+        % Create semilogy
+
+        % plot(Displacement,F,'DisplayName','F','LineWidth',2,...
+        %     'LineStyle',':',...
+        %     'Color',[0.30 0.40 0.43]);
+        hold on;
+        
+
+        % Calculate Stretch
+        stetch(index,1) = p(861,2)/H;
+        % Area(i,1) = p(11,1)*p(463,3);
+        stress(index,1)  = -Ftot (i);%/Area(i,1);
+        % Volume(i,1) = p(11,1)*p(463,3)*p(66,2);
+        % AArea(i,1) = Area(i,1)/Area(1,1);
+        % 
+        plot(stetch,stress,'DisplayName','F','LineWidth',2,...
+             'LineStyle','-',...
+             'Color',[0.30 0.40 0.43]);
+        %legend show;
+
+        xlabel('\boldmath$\it{ \lambda  }$','fontsize',16,'interpreter','latex') 
+        ylabel('\boldmath$\it{ F }$','fontsize',16,'interpreter','latex') 
+
+        drawnow;
+
+        % subplot(2,2,4,'replace');
+        % 
+        % 
+        % hold on;
+        % 
+        % 
+        % % Calculate Stretch
+        % 
+        % 
+        % % plot(stetch,AArea,'DisplayName','F','LineWidth',2,...
+        % %      'LineStyle','-',...
+        % %      'Color',[0.30 0.40 0.43]);
+        % %legend show;
+        % 
+        % xlabel('\boldmath$\it{ \lambda  }$','fontsize',16,'interpreter','latex') 
+        % ylabel('\boldmath$\it{ A/A_0 }$','fontsize',16,'interpreter','latex') 
+
+        drawnow;
+        writeVideo(writerObj, getframe(gcf));
+        
+        index=index +1;
+
+    %figure
+    %scatter3(p(:,1),p(:,2),p(:,3))
+    %axis equal
+    %drawnow;
+
+end 
+
+close(writerObj);
